@@ -10,6 +10,7 @@
 		3405722629AAB9C500319929 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 3405722529AAB9C500319929 /* ArgumentParser */; };
 		3405722829AAB9C500319929 /* generate-manual in Frameworks */ = {isa = PBXBuildFile; productRef = 3405722729AAB9C500319929 /* generate-manual */; };
 		3405722A29AAB9EE00319929 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3405722929AAB9EE00319929 /* Scheduler.swift */; };
+		3405722D29AAD15800319929 /* SwiftCSV in Frameworks */ = {isa = PBXBuildFile; productRef = 3405722C29AAD15800319929 /* SwiftCSV */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -34,6 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3405722D29AAD15800319929 /* SwiftCSV in Frameworks */,
 				3405722629AAB9C500319929 /* ArgumentParser in Frameworks */,
 				3405722829AAB9C500319929 /* generate-manual in Frameworks */,
 			);
@@ -85,6 +87,7 @@
 			packageProductDependencies = (
 				3405722529AAB9C500319929 /* ArgumentParser */,
 				3405722729AAB9C500319929 /* generate-manual */,
+				3405722C29AAD15800319929 /* SwiftCSV */,
 			);
 			productName = wsbb_scheduler;
 			productReference = 3405721A29AAB97200319929 /* wsbb_scheduler */;
@@ -116,6 +119,7 @@
 			mainGroup = 3405721129AAB97200319929;
 			packageReferences = (
 				3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				3405722B29AAD15800319929 /* XCRemoteSwiftPackageReference "SwiftCSV" */,
 			);
 			productRefGroup = 3405721B29AAB97200319929 /* Products */;
 			projectDirPath = "";
@@ -301,6 +305,14 @@
 				minimumVersion = 1.0.0;
 			};
 		};
+		3405722B29AAD15800319929 /* XCRemoteSwiftPackageReference "SwiftCSV" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftcsv/SwiftCSV";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.8.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -313,6 +325,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = "generate-manual";
+		};
+		3405722C29AAD15800319929 /* SwiftCSV */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3405722B29AAD15800319929 /* XCRemoteSwiftPackageReference "SwiftCSV" */;
+			productName = SwiftCSV;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
