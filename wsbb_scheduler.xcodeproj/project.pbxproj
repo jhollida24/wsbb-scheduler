@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3405721E29AAB97200319929 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3405721D29AAB97200319929 /* main.swift */; };
+		3405722629AAB9C500319929 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 3405722529AAB9C500319929 /* ArgumentParser */; };
+		3405722829AAB9C500319929 /* generate-manual in Frameworks */ = {isa = PBXBuildFile; productRef = 3405722729AAB9C500319929 /* generate-manual */; };
+		3405722A29AAB9EE00319929 /* Scheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3405722929AAB9EE00319929 /* Scheduler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +26,7 @@
 
 /* Begin PBXFileReference section */
 		3405721A29AAB97200319929 /* wsbb_scheduler */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = wsbb_scheduler; sourceTree = BUILT_PRODUCTS_DIR; };
-		3405721D29AAB97200319929 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		3405722929AAB9EE00319929 /* Scheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +34,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3405722629AAB9C500319929 /* ArgumentParser in Frameworks */,
+				3405722829AAB9C500319929 /* generate-manual in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,7 +61,7 @@
 		3405721C29AAB97200319929 /* wsbb_scheduler */ = {
 			isa = PBXGroup;
 			children = (
-				3405721D29AAB97200319929 /* main.swift */,
+				3405722929AAB9EE00319929 /* Scheduler.swift */,
 			);
 			path = wsbb_scheduler;
 			sourceTree = "<group>";
@@ -78,6 +82,10 @@
 			dependencies = (
 			);
 			name = wsbb_scheduler;
+			packageProductDependencies = (
+				3405722529AAB9C500319929 /* ArgumentParser */,
+				3405722729AAB9C500319929 /* generate-manual */,
+			);
 			productName = wsbb_scheduler;
 			productReference = 3405721A29AAB97200319929 /* wsbb_scheduler */;
 			productType = "com.apple.product-type.tool";
@@ -106,6 +114,9 @@
 				Base,
 			);
 			mainGroup = 3405721129AAB97200319929;
+			packageReferences = (
+				3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+			);
 			productRefGroup = 3405721B29AAB97200319929 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -120,7 +131,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3405721E29AAB97200319929 /* main.swift in Sources */,
+				3405722A29AAB9EE00319929 /* Scheduler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,6 +291,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3405722529AAB9C500319929 /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+		3405722729AAB9C500319929 /* generate-manual */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3405722429AAB9C500319929 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = "generate-manual";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3405721229AAB97200319929 /* Project object */;
 }
