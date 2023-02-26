@@ -117,8 +117,9 @@ struct Scheduler: ParsableCommand {
     ]
     
     static let broncoTeamNames: [String] = [
-        "Tom's Cubs",
-        "Salon",
+        "The Salon",
+        "TBD1",
+        "TBD2",
         "SGB Warriors",
         "O'Neill Red Sox",
         "Crockett Chihuahuas",
@@ -399,12 +400,12 @@ struct Scheduler: ParsableCommand {
                 }
             }
         
-        Self.divisions.forEach { division in
-            let schedule = schedule(division: division, with: fieldAvailability)
-            let writeURL = URL(filePath: outputFolder).appending(path: "\(division.name).csv")
-            write(practices: schedule, to: writeURL)
+        let schedule = Self.divisions.flatMap { division in
+            return self.schedule(division: division, with: fieldAvailability)
         }
         
+        let writeURL = URL(filePath: outputFolder).appending(path: "schedule_full.csv")
+        write(practices: schedule, to: writeURL)
     }
     
     func schedule(division: Division, with availability: [FieldAvailability]) -> [Practice] {
