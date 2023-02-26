@@ -24,19 +24,23 @@ struct Scheduler: ParsableCommand {
     
     struct Division: Hashable, Decodable {
         let name: String
-        let teamCount: Int
+        let teamNames: [String]
         let startDate: Date
         let endDate: Date
         let daysOfWeek: [Locale.Weekday]
         let canUsePeeWees: Bool
+        let teamSnapName: String
         
-        init(name: String, teamCount: Int, startDate: String, endDate: String, daysOfWeek: [Locale.Weekday], canUsePeeWees: Bool) {
+        var teamCount: Int { teamNames.count }
+        
+        init(name: String, teamNames: [String], startDate: String, endDate: String, daysOfWeek: [Locale.Weekday], canUsePeeWees: Bool, teamSnapName: String) {
             self.name = name
-            self.teamCount = teamCount
+            self.teamNames = teamNames
             self.startDate = divisionsDateFormatter.date(from: startDate + "/\(year)")!
             self.endDate = divisionsDateFormatter.date(from: endDate + "/\(year)")!
             self.daysOfWeek = daysOfWeek
             self.canUsePeeWees = canUsePeeWees
+            self.teamSnapName = teamSnapName
         }
         
         func shouldPractice(on date: Date) -> Bool {
@@ -87,11 +91,49 @@ struct Scheduler: ParsableCommand {
         return dateFormatter
     }()
     
+    static let pintoTeamNames: [String] = [
+        "Wildwood Market",
+        "Tom's Auto",
+        "Raynor Construction",
+        "Pivar",
+        "O'Neill Plumbing",
+        "Northwest Art & Frame",
+        "Menashe Jewelers",
+        "Charter Construction",
+        "Camp Crockett",
+        "Boss Drive-In",
+        "Alki Lumber",
+    ]
+    
+    static let mustangTeamNames: [String] = [
+        "Wildwood Market",
+        "Salon",
+        "O'Neill Plumbing",
+        "Northwest Art & Frame",
+        "Menashe Jewelers",
+        "HIIT Lab",
+        "ES&N",
+        "Alki Lumber",
+    ]
+    
+    static let broncoTeamNames: [String] = [
+        "Tom's Cubs",
+        "Salon",
+        "SGB Warriors",
+        "O'Neill Red Sox",
+        "Crockett Chihuahuas",
+        "Boss Pirates",
+    ]
+    
+    static let ponyTeamNames: [String] = [
+        "West Seattle Pony"
+    ]
+    
     static let divisions = [
-        Division(name: "Pinto", teamCount: 11, startDate: "3/11", endDate: "3/31", daysOfWeek: [.monday, .wednesday, .saturday], canUsePeeWees: true),
-        Division(name: "Mustang", teamCount: 10, startDate: "3/11", endDate: "3/31", daysOfWeek: [.tuesday, .thursday, .saturday], canUsePeeWees: true),
-        Division(name: "Bronco", teamCount: 8, startDate: "3/10", endDate: "3/31", daysOfWeek: [.monday, .wednesday, .friday], canUsePeeWees: false),
-        Division(name: "Pony", teamCount: 2, startDate: "3/11", endDate: "3/31", daysOfWeek: [.tuesday, .thursday], canUsePeeWees: true)
+        Division(name: "Pinto", teamNames: pintoTeamNames, startDate: "3/11", endDate: "3/31", daysOfWeek: [.monday, .wednesday, .saturday], canUsePeeWees: true, teamSnapName: "Pinto 8U"),
+        Division(name: "Mustang", teamNames: mustangTeamNames, startDate: "3/11", endDate: "3/31", daysOfWeek: [.tuesday, .thursday, .saturday], canUsePeeWees: true, teamSnapName: "Mustang 10U"),
+        Division(name: "Bronco", teamNames: broncoTeamNames, startDate: "3/10", endDate: "3/31", daysOfWeek: [.monday, .wednesday, .friday], canUsePeeWees: false, teamSnapName: "Bronco 12U"),
+        Division(name: "Pony", teamNames: ponyTeamNames, startDate: "3/11", endDate: "3/31", daysOfWeek: [.tuesday, .thursday], canUsePeeWees: true, teamSnapName: "Pony 14U")
     ]
     
     enum Field: String, CaseIterable {
@@ -153,6 +195,48 @@ struct Scheduler: ParsableCommand {
         }
         
         var isSplittable: Bool { splitSortPriority != 0 }
+        
+        var teamSnapName: String {
+            switch self {
+                
+            case .peeWeeANorth:
+                return "Pee Wee Field - A North"
+            case .peeWeeBNorth:
+                return "Pee Wee Field - B North"
+            case .peeWeeASouth:
+                return "Pee Wee Field - A South"
+            case .peeWeeBSouth:
+                return "Pee Wee Field - B South"
+            case .delridgeSW:
+                return "Delridge SW Corner"
+            case .delridgeNE:
+                return "Delridge NE Corner"
+            case .sealthLowerUtility:
+                return "Sealth Utility"
+            case .sealthLowerSoftball:
+                return "Sealth Softball Lower"
+            case .sealthUpperSoftball:
+                return "Sealth Softball Upper"
+            case .lincolnPark1:
+                return "Lincoln Park Field #1"
+            case .lincolnPark2:
+                return "Lincoln Park Field #2"
+            case .lincolnPark3:
+                return "Lincoln Park Field #3"
+            case .riverview1:
+                return "Riverview Playfield # 1"
+            case .riverview2:
+                return "Riverview Playfield # 2"
+            case .riverview3:
+                return "Riverview Playfield #3"
+            case .riverview4:
+                return "Riverview Playfield #4"
+            case .waltHundley1:
+                return "Walt Hundley Playfield - #1 (Upper Field)"
+            case .waltHundley2:
+                return "Walt Hundley Playfield - #2 (Upper Field)"
+            }
+        }
     }
     
     struct Subfield: CustomStringConvertible {
@@ -164,11 +248,22 @@ struct Scheduler: ParsableCommand {
         let field: Field
         let subportion: Subportion
         
-        var name: String {
-            field.rawValue + " (" + subportion.rawValue.uppercased() + ")"
+        var teamSnapName: String {
+            switch (field, subportion) {
+            case (.delridgeNE, .infield):
+                return "Delridge NE Corner"
+            case (.delridgeNE, .outfield):
+                return "Delridge NW Corner"
+            case (.delridgeSW, .infield):
+                return "Delridge SW Corner"
+            case (.delridgeSW, .outfield):
+                return "Delridge SE Corner"
+            default:
+                return field.teamSnapName + " " + subportion.rawValue.uppercased()
+            }
         }
         
-        var description: String { name }
+        var description: String { teamSnapName }
     }
     
     struct FieldAvailability {
@@ -224,8 +319,17 @@ struct Scheduler: ParsableCommand {
                 switch self {
                 case let .fullField(field):
                     return field.rawValue
-                case let .subfield(subfield, sharingTeamIndex):
+                case let .subfield(subfield, _):
                     return subfield.description
+                }
+            }
+            
+            var teamSnapName: String {
+                switch self {
+                case let .fullField(field):
+                    return field.teamSnapName
+                case let .subfield(subfield, _):
+                    return subfield.teamSnapName
                 }
             }
         }
@@ -267,8 +371,6 @@ struct Scheduler: ParsableCommand {
             return string
         }
     }
-    
-//    let expectedHeader = ["Date", "Day", "Setup - Ready Time", "Start - End Time", "Facility/Equipment/Instructor", "Permit#", "Division", "Count", "Slots", "Sum", "Needs", "", "Release"]
 
     mutating func run() throws {
         let filepath = "/Users/jhollida/Desktop/wsbb_scheduler/wsbb_scheduler/fields.csv"
@@ -299,11 +401,8 @@ struct Scheduler: ParsableCommand {
         
         Self.divisions.forEach { division in
             let schedule = schedule(division: division, with: fieldAvailability)
-            print("\(division.name) SCHEDULE")
-            for practice in schedule {
-                print(practice)
-            }
-            print("-----------\n\n")
+            let writeURL = URL(filePath: outputFolder).appending(path: "\(division.name).csv")
+            write(practices: schedule, to: writeURL)
         }
         
     }
@@ -475,6 +574,41 @@ struct Scheduler: ParsableCommand {
         return practices
     }
     
+    func write(practices: [Practice], to url: URL) {
+        var rows: [String] = practices.map { practice in
+            let dateCol = practice.startTime.formatted(date: .numeric, time: .omitted)
+            let startCol = practice.startTime.formatted(date: .omitted, time: .shortened)
+            let endCol = (practice.startTime + practice.duration).formatted(date: .omitted, time: .shortened)
+            let arriveEarly = "15"
+            let name = "Practice"
+            let eventType = "Practice"
+            let division = practice.division.teamSnapName
+            let homeTeam = practice.division.teamNames[practice.teamIndex]
+            let awayTeam = ""
+            let location = practice.venue.teamSnapName
+            
+            let locationDetails: String
+            if case let .subfield(subfield, sharingTeamIndex) = practice.venue {
+                let splitTeam = practice.division.teamNames[sharingTeamIndex]
+                locationDetails = "Your team will be splitting the field with \(splitTeam). Consider trading use of the infield at the halfway point."
+            } else {
+                locationDetails = ""
+            }
+            
+            return [dateCol, startCol, endCol, arriveEarly, name, eventType, division, homeTeam, awayTeam, location, locationDetails].joined(separator: ",")
+        }
+        
+        let header = "Date,Start Time,End Time,Arrival Time,Short Label,Event Type,Division,Home Team,Away Team,Location,Location Details"
+        rows.insert(header, at: 0)
+        
+//        for row in rows {
+//            print(row)
+//        }
+        
+        let fileString = rows.joined(separator: "\n")
+        try? FileManager.default.removeItem(at: url)
+        try! fileString.write(to: url, atomically: true, encoding: .utf8)
+    }
     
     func earliestTime(on date: Date) -> Date {
         let calendar = Calendar.current
