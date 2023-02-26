@@ -3,4 +3,23 @@
    uuid = "DD4CC0B7-0FCA-4A23-BCEA-3C33C1B8F2A8"
    type = "1"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "7E5F1B33-489B-4232-A772-2FABF03FB535"
+            shouldBeEnabled = "No"
+            condition = "!remainingTeams.isEmpty &amp;&amp; compressedSplits"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "wsbb_scheduler/Scheduler.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "386"
+            endingLineNumber = "386"
+            landmarkName = "schedulePractices(for:on:with:compressedSplits:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

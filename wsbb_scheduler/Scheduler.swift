@@ -136,23 +136,23 @@ struct Scheduler: ParsableCommand {
             }
         }
         
-        var splitSortPriority: Int? {
+        var splitSortPriority: Int {
             switch self {
             case .delridgeNE, .delridgeSW:
-                return 0
-            case .riverview1, .riverview2, .riverview3, .riverview4:
-                return 1
-            case .peeWeeANorth, .peeWeeBNorth, .peeWeeASouth, .peeWeeBSouth:
-                return 2
-            case .sealthLowerUtility:
+                return 4
+            case .sealthLowerUtility, .sealthLowerSoftball, .sealthUpperSoftball:
                 return 3
-                
+            case .riverview1, .riverview2, .riverview3, .riverview4:
+                return 2
+            case .peeWeeANorth, .peeWeeBNorth, .peeWeeASouth, .peeWeeBSouth:
+                return 1
+            
             default:
-                return nil
+                return 0
             }
         }
         
-        var isSplittable: Bool { splitSortPriority != nil }
+        var isSplittable: Bool { splitSortPriority != 0 }
     }
     
     struct Subfield: CustomStringConvertible {
@@ -393,10 +393,6 @@ struct Scheduler: ParsableCommand {
         duration: TimeInterval,
         with remainingFields: inout [FieldAvailability]
     ) -> [Practice] {
-        guard remainingTeams.count > 0 && remainingFields.count > 0 else {
-            return []
-        }
-        
         var practices = [Practice]()
         while !remainingFields.isEmpty &&
                 !remainingTeams.isEmpty &&
@@ -404,6 +400,12 @@ struct Scheduler: ParsableCommand {
             let field = remainingFields.removeFirst()
             if field.duration >= duration {
                 let teamIndex = remainingTeams.removeFirst()
+                let remainderDuration = field.duration - duration
+                
+                // if we can give them a longer practice, do it.
+                let extendPractice = remainderDuration < division.minimumPracticeTimeInterval
+                let practiceDuration = extendPractice ? division.targetPracticeTimeInterval : duration
+                
                 let practice = Practice(
                     startTime: field.startTime,
                     duration: duration,
@@ -413,13 +415,15 @@ struct Scheduler: ParsableCommand {
                 )
                 practices.append(practice)
                 
-                let remainder = FieldAvailability(
-                    field: field.field,
-                    startTime: field.startTime + duration,
-                    duration: field.duration - duration,
-                    division: division
-                )
-                remainingFields.append(remainder)
+                if !extendPractice {
+                    let remainder = FieldAvailability(
+                        field: field.field,
+                        startTime: field.startTime + duration,
+                        duration: remainderDuration,
+                        division: division
+                    )
+                    remainingFields.append(remainder)
+                }
             } else {
                 remainingFields.append(field)
             }
@@ -436,10 +440,6 @@ struct Scheduler: ParsableCommand {
         unsplitDuration: TimeInterval,
         with fieldAvailability: inout [FieldAvailability]
     ) -> [Practice] {
-        guard fieldAvailability.count > 0, remainingTeamIndices.count > 0 else {
-            return []
-        }
-
         var practices = [Practice]()
         while !fieldAvailability.isEmpty
                 && !remainingTeamIndices.isEmpty
@@ -550,13 +550,18 @@ extension Array where Element == Scheduler.FieldAvailability {
     
     mutating func splitPractice(with practiceDuration: TimeInterval)
     -> (startTime: Date, firstSubfield: Scheduler.Subfield, secondField: Scheduler.Subfield)? {
-        let longestSplittableTimeSlot = self.enumerated()
-            .filter { $0.element.field.isSplittable }
+        let highestPriSlot = self.enumerated()
+            .filter { $0.element.field.isSplittable && $0.element.duration >= practiceDuration }
             .max { field1, field2 in
-                field1.element.duration < field2.element.duration
+                // sort first by split priority, then by duration
+                if field1.element.field.splitSortPriority == field2.element.field.splitSortPriority {
+                    return field1.element.duration < field2.element.duration
+                } else {
+                    return field1.element.field.splitSortPriority < field2.element.field.splitSortPriority
+                }
             }
         
-        if let (index, field) = longestSplittableTimeSlot, field.duration >= practiceDuration {
+        if let (index, field) = highestPriSlot {
             let split = (
                 field.startTime,
                 Scheduler.Subfield(field: field.field, subportion: .infield),
