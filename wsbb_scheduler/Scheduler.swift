@@ -22,15 +22,7 @@ struct Scheduler: ParsableCommand {
 //    var csvFilepath: String
     
     
-        
-    static let dateFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "en_US")
-        dateFormatter.dateStyle = .short
-        return dateFormatter
-    }()
-    
-    struct Division: Decodable {
+    struct Division: Hashable, Decodable {
         let name: String
         let teamCount: Int
         let startDate: Date
@@ -41,12 +33,47 @@ struct Scheduler: ParsableCommand {
         init(name: String, teamCount: Int, startDate: String, endDate: String, daysOfWeek: [Locale.Weekday], canUsePeeWees: Bool) {
             self.name = name
             self.teamCount = teamCount
-            self.startDate = dateFormatter.date(from: startDate + "/\(year)")!
-            self.endDate = dateFormatter.date(from: startDate + "/\(year)")!
+            self.startDate = divisionsDateFormatter.date(from: startDate + "/\(year)")!
+            self.endDate = divisionsDateFormatter.date(from: endDate + "/\(year)")!
             self.daysOfWeek = daysOfWeek
             self.canUsePeeWees = canUsePeeWees
         }
+        
+        func shouldPractice(on date: Date) -> Bool {
+            let calendar = Calendar.current
+            let dayStart = calendar.startOfDay(for: date)
+            let weekday = Locale.Weekday(weekdayOrdinal: calendar.component(.weekday, from: date))!
+            return daysOfWeek.contains(weekday)
+        }
+        
+        var practiceDates: [Date] {
+            var practiceDates = [Date]()
+            
+            let calendar: Calendar = .current
+            let oneDay = TimeInterval(24 * 60 * 60)
+            
+            var date = calendar.startOfDay(for: self.startDate)
+            while (date < self.endDate.addingTimeInterval(oneDay)) {
+                let weekdayOrdinal = calendar.component(.weekday, from: date)
+                let weekday = Locale.Weekday(weekdayOrdinal: weekdayOrdinal)!
+                if daysOfWeek.contains(weekday) {
+                    practiceDates.append(date)
+                }
+                
+                date.addTimeInterval(oneDay)
+            }
+            
+            return practiceDates
+        }
     }
+    
+    static let divisionsDateFormatter: DateFormatter = {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US")
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeZone = .current
+        return dateFormatter
+    }()
     
     static let divisions = [
         Division(name: "Pinto", teamCount: 11, startDate: "3/11", endDate: "3/31", daysOfWeek: [.monday, .wednesday, .saturday], canUsePeeWees: true),
@@ -59,12 +86,7 @@ struct Scheduler: ParsableCommand {
         case peeWees = "Pee Wees"
         
         case delridgeSW = "Delridge Playfield Ballfield 01 (SW)"
-        case delridgeSW_Infield = "Delridge SW (Infield)"
-        case delridgeSW_Outfield = "Delridge SW (Outfield)"
-        
         case delridgeNE = "Delridge Playfield Ballfield 02 (NE)"
-        case delridgeNE_Infield = "Delridge NE (Infield)"
-        case delridgeNE_Outfield = "Delridge NE (Outfield)"
         
         case sealthLowerUtility = "Sealth HS Complex Utility Field Lower"
         case sealthLowerSoftball = "Sealth HS Complex Softball Lower"
@@ -128,11 +150,25 @@ struct Scheduler: ParsableCommand {
         let endTime: Date
         let division: Division
         
-        init(field: String, timeRange: String, division: String) {
+        static let startAndEndTimeFormatter: DateFormatter = {
+            let dateFormatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "en_US")
+            dateFormatter.dateStyle = .medium
+            dateFormatter.timeStyle = .short
+            dateFormatter.timeZone = .current
+            return dateFormatter
+        }()
+        
+        init(field: String, day: String, timeRange: String, division: String) {
             self.field = Field(rawValue: field)!
             self.division = divisions.first { $0.name == division }!
-            self.startTime = Date()
-            self.endTime = Date()
+            
+            let components = timeRange.components(separatedBy: "-")
+            let startTimeString = "\(day) at \(components[0])".trimmingCharacters(in: .whitespaces)
+            let endTimeString = "\(day) at \(components[1])".trimmingCharacters(in: .whitespaces)
+            
+            self.startTime = Self.startAndEndTimeFormatter.date(from: startTimeString)!
+            self.endTime = Self.startAndEndTimeFormatter.date(from: endTimeString)!
         }
     }
     
@@ -142,6 +178,19 @@ struct Scheduler: ParsableCommand {
         case field = "Facility/Equipment/Instructor"
         case division = "Division"
         case release = "Release\r"
+    }
+    
+    struct Practice {
+        enum Venue {
+            case fullField(field: Field)
+            case subfield(subfield: Subfield, sharingTeamIndex: Int)
+        }
+        
+        let startTime: Date
+        let duration: TimeInterval
+        let division: Division
+        let teamIndex: Int
+        let venue: Venue
     }
     
 //    let expectedHeader = ["Date", "Day", "Setup - Ready Time", "Start - End Time", "Facility/Equipment/Instructor", "Permit#", "Division", "Count", "Slots", "Sum", "Needs", "", "Release"]
@@ -161,15 +210,71 @@ struct Scheduler: ParsableCommand {
                     return nil
                 }
                 
-                let timeRange = row[Column.date.rawValue]! + " " + row[Column.startToEnd.rawValue]!
                 return FieldAvailability(
                     field: row[Column.field.rawValue]!,
-                    timeRange: timeRange,
+                    day: row[Column.date.rawValue]!,
+                    timeRange: row[Column.startToEnd.rawValue]!,
                     division: division
                 )
             }
         
-        print(fieldAvailability)
+        Self.divisions.forEach {
+            let schedule = schedule(division: $0, with: fieldAvailability)
+        }
+        
     }
+    
+    func schedule(division: Division, with availability: [FieldAvailability]) -> [Practice] {
+        print("\(division.name) division has practices on: \(division.practiceDates)")
+        return []
+    }
+    
+    func earliestTime(on date: Date) -> Date {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let weekdaySymbol = calendar.weekdaySymbols[calendar.component(.weekday, from: date)]
+        let weekday = Locale.Weekday(rawValue: weekdaySymbol)!
+        
+        let hoursToAdd: Int
+        switch weekday {
+        case .saturday, .sunday:
+            hoursToAdd = 9 // 9 AM
+        case .monday, .tuesday, .wednesday, .thursday, .friday:
+            hoursToAdd = 17 //5 PM
+        }
+        
+        let secondsInHour = 60 * 60
+        return dayStart.addingTimeInterval(TimeInterval(hoursToAdd * secondsInHour))
+    }
+}
 
+extension Locale.Weekday {
+    var weekdayOrdinal: Int {
+        switch self {
+        case .sunday:
+            return 1
+        case .monday:
+            return 2
+        case .tuesday:
+            return 3
+        case .wednesday:
+            return 4
+        case .thursday:
+            return 5
+        case .friday:
+            return 6
+        case .saturday:
+            return 7
+        }
+    }
+    
+    init?(weekdayOrdinal: Int) {
+        let allCases: [Self] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
+        let weekday = allCases.first { $0.weekdayOrdinal == weekdayOrdinal }
+        if let weekday {
+            self = weekday
+        } else {
+            return nil
+        }
+    }
 }
