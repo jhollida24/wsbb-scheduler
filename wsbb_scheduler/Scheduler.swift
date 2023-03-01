@@ -410,6 +410,9 @@ struct Scheduler: ParsableCommand {
     
     func schedule(division: Division, with availability: [FieldAvailability]) -> [Practice] {
         let calendar: Calendar = .current
+        let zeroSplitCounts = (0..<division.teamCount).map { ($0, 0) }
+        var splitCounts: [Int: Int] = .init(uniqueKeysWithValues: zeroSplitCounts)
+        
         return division.practiceDates.flatMap { (practiceDate: Date) -> [Practice] in
             let fieldsThatDay = availability.filter { field in
                 calendar.isDate(practiceDate, inSameDayAs: field.startTime) &&
@@ -419,7 +422,7 @@ struct Scheduler: ParsableCommand {
             let (fullLengthSuccess, fullLengthSplitPractices) = schedulePractices(
                 for: division,
                 on: practiceDate,
-                with: fieldsThatDay,
+                with: fieldsThatDay, splitCounts: &splitCounts,
                 compressedSplits: false
             )
             
@@ -430,6 +433,7 @@ struct Scheduler: ParsableCommand {
                     for: division,
                     on: practiceDate,
                     with: fieldsThatDay,
+                    splitCounts: &splitCounts,
                     compressedSplits: true
                 )
                 
@@ -446,6 +450,7 @@ struct Scheduler: ParsableCommand {
         for division: Division,
         on practiceDate: Date,
         with fieldAvailability: [FieldAvailability],
+        splitCounts: inout [Int: Int],
         compressedSplits: Bool
     ) -> (success: Bool, practices: [Practice]) {
         var remainingTeams = Array(0..<division.teamCount).shuffled()
@@ -457,6 +462,7 @@ struct Scheduler: ParsableCommand {
         var practices = scheduleSplitsUntilEnoughForFullPractices(
             for: &remainingTeams,
             division: division,
+            splitCounts: &splitCounts,
             on: practiceDate,
             splitDuration: splitDuration,
             unsplitDuration: division.targetPracticeTimeInterval,
@@ -504,7 +510,6 @@ struct Scheduler: ParsableCommand {
                 
                 // if we can give them a longer practice, do it.
                 let extendPractice = remainderDuration < division.minimumPracticeTimeInterval
-                let practiceDuration = extendPractice ? division.targetPracticeTimeInterval : duration
                 
                 let practice = Practice(
                     startTime: field.startTime,
@@ -535,6 +540,7 @@ struct Scheduler: ParsableCommand {
     func scheduleSplitsUntilEnoughForFullPractices(
         for remainingTeamIndices: inout [Int],
         division: Division,
+        splitCounts: inout [Int: Int],
         on practiceDate: Date,
         splitDuration: TimeInterval,
         unsplitDuration: TimeInterval,
@@ -546,8 +552,8 @@ struct Scheduler: ParsableCommand {
                 && fieldAvailability.practiceCount(of: unsplitDuration) < remainingTeamIndices.count {
             
             if let (startTime, subfield1, subfield2) = fieldAvailability.splitPractice(with: splitDuration) {
-                let teamIndex1 = remainingTeamIndices.removeLast()
-                let teamIndex2 = remainingTeamIndices.removeLast()
+                let teamIndex1 = remainingTeamIndices.removeTeamWithLowestSplitCount(splitCounts: &splitCounts)
+                let teamIndex2 = remainingTeamIndices.removeTeamWithLowestSplitCount(splitCounts: &splitCounts)
                 
                 let practice1 = Practice(
                     startTime: startTime,
@@ -587,19 +593,20 @@ struct Scheduler: ParsableCommand {
             let homeTeam = practice.division.teamNames[practice.teamIndex]
             let awayTeam = ""
             let location = practice.venue.teamSnapName
+            let locationDetails = ""
             
-            let locationDetails: String
-            if case let .subfield(subfield, sharingTeamIndex) = practice.venue {
+            let notes: String
+            if case let .subfield(_, sharingTeamIndex) = practice.venue {
                 let splitTeam = practice.division.teamNames[sharingTeamIndex]
-                locationDetails = "Your team will be splitting the field with \(splitTeam). Consider trading use of the infield at the halfway point."
+                notes = "Your team will be splitting the field with \(splitTeam). Consider trading use of the infield at the halfway point."
             } else {
-                locationDetails = ""
+                notes = ""
             }
             
-            return [dateCol, startCol, endCol, arriveEarly, name, eventType, division, homeTeam, awayTeam, location, locationDetails].joined(separator: ",")
+            return [dateCol, startCol, endCol, arriveEarly, name, eventType, division, homeTeam, awayTeam, location, locationDetails, notes].joined(separator: ",")
         }
         
-        let header = "Date,Start Time,End Time,Arrival Time,Short Label,Event Type,Division,Home Team,Away Team,Location,Location Details"
+        let header = "Date,Start Time,End Time,Arrival Time,Short Label,Event Type,Division,Home Team,Away Team,Location,Location Details, Notes"
         rows.insert(header, at: 0)
         
 //        for row in rows {
@@ -658,6 +665,18 @@ extension Locale.Weekday {
         } else {
             return nil
         }
+    }
+}
+
+extension Array where Element == Int {
+    mutating func removeTeamWithLowestSplitCount(splitCounts: inout [Int : Int]) -> Int {
+        let teamIndex = self.enumerated().min { teamIndex1, teamIndex2 in
+            splitCounts[teamIndex1.element]! < splitCounts[teamIndex2.element]!
+        }!
+        
+        
+        splitCounts[teamIndex.element, default: 0] += 1
+        return self.remove(at: teamIndex.offset)
     }
 }
 
